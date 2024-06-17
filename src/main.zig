@@ -1,9 +1,10 @@
 const std = @import("std");
+const soduku = @import("sudoku.zig");
 
 pub fn main() void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const allocator = arena.allocator();
+    var allocator = arena.allocator();
 
     var argv = std.process.argsWithAllocator(allocator) catch std.process.exit(123);
     defer argv.deinit();
@@ -15,9 +16,23 @@ pub fn main() void {
         std.process.exit(1);
     };
     args.debug();
+
+    var solution = soduku.Solution.init(args, &allocator) catch |err| {
+        std.log.err("error parsing solution: {}", .{err});
+        std.process.exit(2);
+    };
+
+    solution.solve(&allocator) catch |e| {
+        std.log.err("couldn't solve puzzle: {}", .{e});
+        std.process.exit(3);
+    };
+
+    solution.printSolution() catch |e| {
+        std.log.err("error outputing puzzle: {}", .{e});
+    };
 }
 
-const AppArgs = struct {
+pub const AppArgs = struct {
     inputPath: []const u8,
     outputPath: ?[]const u8,
     printPartials: bool,
